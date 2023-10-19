@@ -1,6 +1,9 @@
 ---
 title: "Swirl"
-author: "Тыван Максим"
+author: "Тыван Максим Владимирович"
+format: 
+    md:
+        output-file: README
 ---
 
 # Цель работы
