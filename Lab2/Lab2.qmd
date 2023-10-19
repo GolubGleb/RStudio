@@ -3,7 +3,7 @@ title: "Основы обработки данных с помощью R"
 author: "Тыван Максим Владимирович"
 format:
     md: 
-        output-file: README.MD
+        output-file: README
 engine: knitr
 ---
 
