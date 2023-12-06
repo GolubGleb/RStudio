@@ -1,0 +1,133 @@
+---
+title: "Анализ логов с помощью языка R"
+author: "Тыван Максим Владимирович"
+format:
+    md:
+        output-file: README
+editor: visual
+engine: knitr
+---
+
+# Цель работы
+
+1.  Получить знания о методах исследования радиоэлектронной обстановки.
+2.  Составить представление о механизмах работы Wi-Fi сетей на канальном и сетевом уровне модели OSI.
+3.  Зекрепить практические навыки использования языка программирования R для обработки данных
+4.  Закрепить знания основных функций обработки данных экосистемы tidyverse языка R
+
+
+# Ход работы
+
+Импорт данных и библиотек
+```{r}
+library(dplyr)
+library(tidyverse)
+mir1 = read.csv("mir_csv-01.csv", nrows = 167)
+mir2 = read.csv("mir_csv-01.csv", skip = 169)
+```
+Привидение данных в аккуратный вид
+```{r}
+mir1$Last.time.seen <- as.POSIXct(mir1$Last.time.seen, format = "%Y-%m-%d %H:%M:%S")
+mir1$First.time.seen <- as.POSIXct(mir1$First.time.seen, format = "%Y-%m-%d %H:%M:%S")
+mir2$Last.time.seen <- as.POSIXct(mir2$Last.time.seen, format = "%Y-%m-%d %H:%M:%S")
+mir2$First.time.seen <- as.POSIXct(mir2$First.time.seen, format = "%Y-%m-%d %H:%M:%S")
+mir2 <- mir2 %>% mutate_at(vars(Station.MAC, BSSID, Probed.ESSIDs), trimws) %>% mutate_at(vars(Station.MAC, BSSID, Probed.ESSIDs), na_if, "")
+
+mir2 %>% head
+```
+Просмотр общей структуры данных
+
+```{r}
+mir1 %>% glimpse()
+mir2 %>% glimpse()
+```
+## Анализ
+
+### Точки доступа
+
+Определить небезопасные точки доступа (без шифрования – OPN)
+```{r}
+openwifi <- mir1 %>% filter(grepl("OPN", Privacy)) %>% select(BSSID, ESSID) %>% arrange(BSSID) %>% distinct
+openwifi
+```
+
+Определить производителя для каждого обнаруженного устройства
+
+00:03:7A Taiyo Yuden Co., Ltd.
+00:03:7F Atheros Communications, Inc.
+00:25:00 Apple, Inc.
+00:26:99 Cisco Systems, Inc
+E0:D9:E3 Eltex Enterprise Ltd.
+E8:28:C1 Eltex Enterprise Ltd.
+
+Выявить устройства, использующие последнюю версию протокола шифрования WPA3, и названия точек доступа, реализованных на этих устройствах
+
+```{r}
+mir1 %>% filter(grepl("WPA3", Privacy)) %>% select(BSSID, ESSID, Privacy)
+```
+
+Отсортировать точки доступа по интервалу времени, в течение которого они находились на связи, по убыванию
+
+```{r}
+mir1int <- mir1 %>% mutate(Time.Interval = Last.time.seen - First.time.seen)
+
+mir1int %>% arrange(desc(Time.Interval)) %>% mutate(Time.Interval = seconds_to_period(Time.Interval)) %>% select(BSSID, First.time.seen, Last.time.seen, Time.Interval) %>% head
+```
+
+Обнаружить топ-10 самых быстрых точек доступа
+
+```{r}
+spottop <- mir1 %>% arrange(desc(Speed)) %>% select(BSSID, ESSID, Speed, Privacy) %>% head(10)
+spottop
+```
+
+Отсортировать точки доступа по частоте отправки запросов
+
+```{r}
+mir1req <- mir1int %>% mutate(beacon_rate = as.double(X..beacons) / as.integer(Time.Interval))
+
+mir1req %>% select(BSSID, ESSID, Privacy, X..beacons, Time.Interval, beacon_rate) %>% filter(!is.infinite(beacon_rate)) %>% arrange(desc(beacon_rate)) %>% head
+```
+
+### Данные клиентов
+
+Определить производителя для каждого обнаруженного устройства
+
+```{r}
+mir2 %>% filter(grepl("(..:..:..:)(..:..:..)", BSSID)) %>% distinct(BSSID)
+```
+
+00:03:7F Atheros Communications, Inc.
+00:0D:97 Hitachi Energy USA Inc.
+00:23:EB Cisco Systems, Inc
+00:25:00 Apple, Inc.
+00:26:99 Cisco Systems, Inc
+08:3A:2F Guangzhou Juan Intelligent Tech Joint Stock Co.,Ltd
+0C:80:63 Tp-Link Technologies Co.,Ltd.
+DC:09:4C Huawei Technologies Co.,Ltd
+E0:D9:E3 Eltex Enterprise Ltd.
+E8:28:C1 Eltex Enterprise Ltd.
+
+Обнаружить устройства, которые НЕ рандомизируют свой MAC адрес
+
+```{r}
+mir2 %>% filter(grepl("(..:..:..:)(..:..:..)", BSSID) & !is.na(Probed.ESSIDs)) %>% select(BSSID, Probed.ESSIDs) %>% group_by(BSSID, Probed.ESSIDs) %>% filter(n() > 1) %>% arrange(BSSID) %>% unique()
+```
+
+Кластеризовать запросы от устройств к точкам доступа по их именам. Определить время появления устройства в зоне радиовидимости и время выхода его из нее
+
+```{r}
+cData <- mir2 %>% filter(!is.na(Probed.ESSIDs)) %>% group_by(Station.MAC, Probed.ESSIDs) %>% arrange(First.time.seen)
+
+cSum <- cData %>% summarise(Cluster_Start_Time = min(First.time.seen), Cluster_End_Time = max(Last.time.seen))
+
+cSum %>% head(10)
+```
+
+Оценить стабильность уровня сигнала внури кластера во времени. Выявить наиболее стабильный кластер. Для оценки стабильности оценить математическое ожидание и среднеквадратичное отклонение для каждого найденного кластера.
+
+```{r}
+sMetric <- cData %>% group_by(Station.MAC, Probed.ESSIDs) %>% summarise(Mean_Power = mean(Power))
+
+sMetric %>% arrange((Mean_Power)) %>% head(1)
+```
