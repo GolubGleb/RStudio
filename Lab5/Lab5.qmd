@@ -117,17 +117,11 @@ mir2 %>% filter(grepl("(..:..:..:)(..:..:..)", BSSID) & !is.na(Probed.ESSIDs)) %
 Кластеризовать запросы от устройств к точкам доступа по их именам. Определить время появления устройства в зоне радиовидимости и время выхода его из нее
 
 ```{r}
-cData <- mir2 %>% filter(!is.na(Probed.ESSIDs)) %>% group_by(Station.MAC, Probed.ESSIDs) %>% arrange(First.time.seen)
-
-cSum <- cData %>% summarise(Cluster_Start_Time = min(First.time.seen), Cluster_End_Time = max(Last.time.seen))
-
-cSum %>% head(10)
+mir2 %>% filter(Probed.ESSIDs != '<NA>') %>% group_by(Station.MAC, Probed.ESSIDs) %>%  summarise("FirstTimeCluster" = min(First.time.seen), "LastTimeClusteer" = max(Last.time.seen), Power)
 ```
 
 Оценить стабильность уровня сигнала внури кластера во времени. Выявить наиболее стабильный кластер. Для оценки стабильности оценить математическое ожидание и среднеквадратичное отклонение для каждого найденного кластера.
 
 ```{r}
-sMetric <- cData %>% group_by(Station.MAC, Probed.ESSIDs) %>% summarise(Mean_Power = mean(Power))
-
-sMetric %>% arrange((Mean_Power)) %>% head(1)
+mir2 %>% filter(!is.na(Probed.ESSIDs),!is.na(Power) ) %>% group_by(Station.MAC) %>%  summarise("FirstTimeCluster" = min(First.time.seen), "LastTimeCluster" = max(Last.time.seen), Power) %>% arrange(desc(Power)) %>% head(1)
 ```

@@ -374,32 +374,27 @@ mir2 %>% filter(grepl("(..:..:..:)(..:..:..)", BSSID) & !is.na(Probed.ESSIDs)) %
 выхода его из нее
 
 ``` r
-cData <- mir2 %>% filter(!is.na(Probed.ESSIDs)) %>% group_by(Station.MAC, Probed.ESSIDs) %>% arrange(First.time.seen)
-
-cSum <- cData %>% summarise(Cluster_Start_Time = min(First.time.seen), Cluster_End_Time = max(Last.time.seen))
+mir2 %>% filter(Probed.ESSIDs != '<NA>') %>% group_by(Station.MAC, Probed.ESSIDs) %>%  summarise("FirstTimeCluster" = min(First.time.seen), "LastTimeClusteer" = max(Last.time.seen), Power)
 ```
 
     `summarise()` has grouped output by 'Station.MAC'. You can override using the
     `.groups` argument.
 
-``` r
-cSum %>% head(10)
-```
-
-    # A tibble: 10 × 4
-    # Groups:   Station.MAC [10]
-       Station.MAC       Probed.ESSIDs       Cluster_Start_Time  Cluster_End_Time   
-       <chr>             <chr>               <dttm>              <dttm>             
-     1 00:90:4C:E6:54:54 Redmi               2023-07-28 09:16:59 2023-07-28 10:21:15
-     2 00:95:69:E7:7C:ED nvripcsuite         2023-07-28 09:13:11 2023-07-28 11:56:13
-     3 00:95:69:E7:7D:21 nvripcsuite         2023-07-28 09:13:15 2023-07-28 11:56:17
-     4 00:95:69:E7:7F:35 nvripcsuite         2023-07-28 09:13:11 2023-07-28 11:56:07
-     5 00:F4:8D:F7:C5:19 Redmi 12            2023-07-28 10:45:04 2023-07-28 11:43:26
-     6 02:00:00:00:00:00 xt3 w64dtgv5cfrxht… 2023-07-28 09:54:40 2023-07-28 11:55:36
-     7 02:06:2B:A5:0C:31 Avenue611           2023-07-28 09:55:12 2023-07-28 09:55:12
-     8 02:1D:0F:A4:94:74 iPhone (Дима )      2023-07-28 09:57:08 2023-07-28 09:57:08
-     9 02:32:DC:56:5C:82 Timo Resort         2023-07-28 10:58:23 2023-07-28 10:58:24
-    10 02:35:E9:C2:44:5F iPhone (Максим)     2023-07-28 10:00:55 2023-07-28 10:00:55
+    # A tibble: 1,477 × 5
+    # Groups:   Station.MAC [1,477]
+       Station.MAC       Probed.ESSIDs FirstTimeCluster    LastTimeClusteer    Power
+       <chr>             <chr>         <dttm>              <dttm>              <chr>
+     1 00:90:4C:E6:54:54 Redmi         2023-07-28 09:16:59 2023-07-28 10:21:15 " -6…
+     2 00:95:69:E7:7C:ED nvripcsuite   2023-07-28 09:13:11 2023-07-28 11:56:13 " -5…
+     3 00:95:69:E7:7D:21 nvripcsuite   2023-07-28 09:13:15 2023-07-28 11:56:17 " -3…
+     4 00:95:69:E7:7F:35 nvripcsuite   2023-07-28 09:13:11 2023-07-28 11:56:07 " -6…
+     5 00:F4:8D:F7:C5:19 Redmi 12      2023-07-28 10:45:04 2023-07-28 11:43:26 " -7…
+     6 02:00:00:00:00:00 xt3 w64dtgv5… 2023-07-28 09:54:40 2023-07-28 11:55:36 " -6…
+     7 02:06:2B:A5:0C:31 Avenue611     2023-07-28 09:55:12 2023-07-28 09:55:12 " -6…
+     8 02:1D:0F:A4:94:74 iPhone (Дима… 2023-07-28 09:57:08 2023-07-28 09:57:08 " -6…
+     9 02:32:DC:56:5C:82 Timo Resort   2023-07-28 10:58:23 2023-07-28 10:58:24 " -8…
+    10 02:35:E9:C2:44:5F iPhone (Макс… 2023-07-28 10:00:55 2023-07-28 10:00:55 " -8…
+    # ℹ 1,467 more rows
 
 Оценить стабильность уровня сигнала внури кластера во времени. Выявить
 наиболее стабильный кластер. Для оценки стабильности оценить
@@ -407,26 +402,10 @@ cSum %>% head(10)
 найденного кластера.
 
 ``` r
-sMetric <- cData %>% group_by(Station.MAC, Probed.ESSIDs) %>% summarise(Mean_Power = mean(Power))
+mir2 %>% filter(!is.na(Probed.ESSIDs),!is.na(Power) ) %>% group_by(Station.MAC) %>%  summarise("FirstTimeCluster" = min(First.time.seen), "LastTimeCluster" = max(Last.time.seen), Power) %>% arrange(desc(Power)) %>% head(1)
 ```
 
-    Warning: There were 1477 warnings in `summarise()`.
-    The first warning was:
-    ℹ In argument: `Mean_Power = mean(Power)`.
-    ℹ In group 1: `Station.MAC = "00:90:4C:E6:54:54"`, `Probed.ESSIDs = "Redmi"`.
-    Caused by warning in `mean.default()`:
-    ! аргумент не является числовым или логическим: возвращаю NA
-    ℹ Run `dplyr::last_dplyr_warnings()` to see the 1476 remaining warnings.
-
-    `summarise()` has grouped output by 'Station.MAC'. You can override using the
-    `.groups` argument.
-
-``` r
-sMetric %>% arrange((Mean_Power)) %>% head(1)
-```
-
-    # A tibble: 1 × 3
-    # Groups:   Station.MAC [1]
-      Station.MAC       Probed.ESSIDs Mean_Power
-      <chr>             <chr>              <dbl>
-    1 00:90:4C:E6:54:54 Redmi                 NA
+    # A tibble: 1 × 4
+      Station.MAC       FirstTimeCluster    LastTimeCluster     Power 
+      <chr>             <dttm>              <dttm>              <chr> 
+    1 8A:45:77:F9:7F:F4 2023-07-28 10:00:55 2023-07-28 10:00:55 " -89"
