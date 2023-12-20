@@ -2,9 +2,8 @@
 title: "Исследование вредоносной активности в домене Windows"
 author: "Тыван Максим Владимирович"
 format:
-    md:
+    md: 
         output-file: README
-editor: visual
 engine: knitr
 ---
 
