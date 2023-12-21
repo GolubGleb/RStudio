@@ -2,8 +2,8 @@
 title: "Основы обработки данных с помощью R"
 author: "Тыван Максим Владимирович"
 format:
-    md: 
-        output-file: README
+    md:
+        output-file: README.md
 engine: knitr
 ---
 
@@ -22,6 +22,7 @@ library(nycflights13)
 ```
 
 Сколько встроенных в пакет nycflights13 датафреймов?
+
 ```{r}
 airlines
 airports
@@ -31,6 +32,7 @@ weather
 ```
 
 Сколько строк в каждом датафрейме?
+
 ```{r}
 airlines %>% nrow()
 airports %>% nrow()
@@ -38,7 +40,9 @@ flights %>% nrow()
 planes %>% nrow()
 weather %>% nrow()
 ```
+
 Сколько столбцов в каждом датафрейме?
+
 ```{r}
 airlines %>% ncol()
 airports %>% ncol()
@@ -48,6 +52,7 @@ weather %>% ncol()
 ```
 
 Как просмотреть примерный вид датафрейма?
+
 ```{r}
 airlines %>% glimpse()
 airports %>% glimpse()
@@ -56,44 +61,50 @@ planes %>% glimpse()
 weather %>% glimpse()
 ```
 
-Сколько компаний-перевозчиков (carrier) учитывают эти наборы данных (представлено в наборах дан-
-ных)?
+Сколько компаний-перевозчиков (carrier) учитывают эти наборы данных (представлено в наборах дан- ных)?
 
 ```{r}
 airlines %>% nrow()
 ```
 
 Сколько рейсов принял аэропорт John F Kennedy Intl в мае?
+
 ```{r}
 flights %>% filter(month == 5 & origin == "JFK") %>% nrow()
 ```
 
 Какой самый северный аэропорт?
+
 ```{r}
 arrange(airports, desc(lat)) %>% select(name, lat) %>% slice(1)
 ```
 
 Какой аэропорт самый высокогорный (находится выше всех над уровнем моря)?
+
 ```{r}
 arrange(airports, desc(alt)) %>% select(name, alt) %>% slice(1)
 ```
 
 Какие бортовые номера у самых старых самолетов?
+
 ```{r}
 arrange(planes, year) %>% select(year, model)
 ```
 
 Какая средняя температура воздуха была в сентябре в аэропорту John F Kennedy Intl (в градусах Цельсия).
+
 ```{r}
 weather %>% filter(origin =="JFK" & month == 9) %>% mutate(TEMP = 5/9 * (temp - 32)) %>% select(TEMP, hour, day, month)
 ```
 
 Самолеты какой авиакомпании совершили больше всего вылетов в июне?
+
 ```{r}
 flights %>% group_by(carrier) %>% summarise(num_f= n()) %>% arrange(desc(num_f)) %>% slice(1:1)
 ```
 
 Самолеты какой авиакомпании задерживались чаще других в 2013 году?
+
 ```{r}
 flights %>% mutate(delay = dep_delay > 0) %>% filter(year == 2013 & delay == TRUE) %>% group_by(carrier) %>% summarise(del_col = n()) %>% arrange(desc(del_col))
 ```
