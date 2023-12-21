@@ -2,27 +2,30 @@
 title: "Исследование метаданных DNS трафика"
 author: "Тыван Максим Владимирович"
 format:
-    md: 
-        output-file: README
+    md:
+        output-file: README.md
 engine: knitr
 ---
 
 # Цель работы
 
-1. Закрепить практические навыки использования языка программирования R для обработки данных
-2. Закрепить знания основных функций обработки данных экосистемы tidyverse языка R
-3. Закрепить навыки исследования метаданных DNS трафика
+1.  Закрепить практические навыки использования языка программирования R для обработки данных
+2.  Закрепить знания основных функций обработки данных экосистемы tidyverse языка R
+3.  Закрепить навыки исследования метаданных DNS трафика
 
 # Ход работы
 
 Импортировать данные DNS и библиотеку tidyverse
+
 ```{r}
 library(tidyverse)
 dataLog <- read.csv("dns.log",sep="\t")
 dataCSV <- read.csv("header.csv")
 dataCSV
 ```
+
 Добавьте пропущенные данные о структуре данных (назначении столбцов)
+
 ```{r}
 dataCSV[3,"Field"] <- "id.orig_h"
 dataCSV[3,"Type"] <- "addr"
@@ -33,7 +36,9 @@ dataCSV <- dataCSV %>% add_row(Field = "id.orig_p", Type = "port", Description =
 dataCSV <- dataCSV %>% add_row(Field = 'id.resp_p', Type = "port", Description = "Response port", .before = 6)
 dataCSV
 ```
+
 Преобразуйте данные в столбцах в нужный формат
+
 ```{r}
 normal <- dataCSV[,1]
 colnames(dataLog) <- normal
@@ -46,6 +51,7 @@ glimpse(dataLog)
 ```
 
 Сколько участников информационного обмена в сети Доброй Организации?
+
 ```{r}
 length(unique(dataLog$uid))
 ```
@@ -53,17 +59,20 @@ length(unique(dataLog$uid))
 Какое соотношение участников обмена внутри сети и участников обращений к внешним ресурсам?
 
 Найти топ-10 участников в сети, проявляющих большую активность?
+
 ```{r}
 dataLog %>% group_by(id.orig_h) %>% summarise(act = n()) %>% arrange(desc(act)) %>% top_n(10,act)
 ```
 
 Найти топ-10 доменов, к которым обращались пользователи и количество обращений
+
 ```{r}
 topDomains <- dataLog %>% group_by(domain = tolower(`query `)) %>% summarise(col = n()) %>% arrange(desc(col)) %>% top_n(10,col)
 topDomains
 ```
 
 Определить базовые статистические характеристики интервала времени между последовательным обращениям к топ-10 доменам
+
 ```{r}
 statDomains <- dataLog %>% filter(tolower(`query `) %in% topDomains$domain) %>% arrange(ts)
 interval <- diff(statDomains$ts)
@@ -71,6 +80,7 @@ summary(interval)
 ```
 
 Часто вредоносное программное обеспечение использует DNS канал в качестве каналауправления, периодически отправляя запросы на подконтрольный злоумышленникам DNS сервер. По периодическим запросам на один и тот же домен можно выявить скрытый DNS канал. Есть ли такие IP адреса в исследуемом датасете?
+
 ```{r}
 ips <- dataLog %>% group_by(ip = id.orig_h, domain = tolower(`query `)) %>% summarise(req = n(), .groups = "drop") %>% filter(req > 1)
 unqIps <- unique(ips$ip)
@@ -78,16 +88,6 @@ unqIps %>% length()
 unqIps
 ```
 
-Определите местоположение (страну, город) и организацию-провайдера для топ-10 доменов. Для этого
-можно использовать сторонние сервисы, например https://v4.ifconfig.co/.
+Определите местоположение (страну, город) и организацию-провайдера для топ-10 доменов. Для этого можно использовать сторонние сервисы, например https://v4.ifconfig.co/.
 
-teredo.ipv6.microsoft.com - United States, Redmond, Microsoft Corporation
-tools.google.com - United States, Mountain View, Google
-www.apple.com - Germany, Frankfurt, Akamai techonologies
-safebrowsing.clients.google.com - United States, Mountain View, Google
-imap.gmail.com - United States, Iston, Google LLC
-stats.norton.com - GreatBritain, Washington, Microsoft Corporation
-www.google.com - Unites States, Mountain View, Google
-ratings-wrs.symantec.com - United States, Redmond, Microsoft Corporation
-api.twitter.com - United States, San Francisco, Twitter inc
-api.facebook.com - Unites States, Menlo Park, Facebook inc
+teredo.ipv6.microsoft.com - United States, Redmond, Microsoft Corporation tools.google.com - United States, Mountain View, Google www.apple.com - Germany, Frankfurt, Akamai techonologies safebrowsing.clients.google.com - United States, Mountain View, Google imap.gmail.com - United States, Iston, Google LLC stats.norton.com - GreatBritain, Washington, Microsoft Corporation www.google.com - Unites States, Mountain View, Google ratings-wrs.symantec.com - United States, Redmond, Microsoft Corporation api.twitter.com - United States, San Francisco, Twitter inc api.facebook.com - Unites States, Menlo Park, Facebook inc
