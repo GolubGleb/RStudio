@@ -172,9 +172,9 @@ openwifi
 
 Определить производителя для каждого обнаруженного устройства
 
-00:03:7A Taiyo Yuden Co., Ltd. 00:03:7F Atheros Communications, Inc.
-00:25:00 Apple, Inc. 00:26:99 Cisco Systems, Inc E0:D9:E3 Eltex
-Enterprise Ltd. E8:28:C1 Eltex Enterprise Ltd.
+00:03:7A Taiyo Yuden Co., Ltd. 00:03:7F Atheros Communications,
+Inc. 00:25:00 Apple, Inc. 00:26:99 Cisco Systems, Inc E0:D9:E3 Eltex
+Enterprise Ltd. E8:28:C1 Eltex Enterprise Ltd.
 
 Выявить устройства, использующие последнюю версию протокола шифрования
 WPA3, и названия точек доступа, реализованных на этих устройствах
@@ -336,11 +336,12 @@ mir2 %>% filter(grepl("(..:..:..:)(..:..:..)", BSSID)) %>% distinct(BSSID)
     73 00:03:7F:10:17:56
     74 00:0D:97:6B:93:DF
 
-00:03:7F Atheros Communications, Inc. 00:0D:97 Hitachi Energy USA Inc.
-00:23:EB Cisco Systems, Inc 00:25:00 Apple, Inc. 00:26:99 Cisco Systems,
-Inc 08:3A:2F Guangzhou Juan Intelligent Tech Joint Stock Co.,Ltd
-0C:80:63 Tp-Link Technologies Co.,Ltd. DC:09:4C Huawei Technologies
-Co.,Ltd E0:D9:E3 Eltex Enterprise Ltd. E8:28:C1 Eltex Enterprise Ltd.
+00:03:7F Atheros Communications, Inc. 00:0D:97 Hitachi Energy USA
+Inc. 00:23:EB Cisco Systems, Inc 00:25:00 Apple, Inc. 00:26:99 Cisco
+Systems, Inc 08:3A:2F Guangzhou Juan Intelligent Tech Joint Stock
+Co.,Ltd 0C:80:63 Tp-Link Technologies Co.,Ltd. DC:09:4C Huawei
+Technologies Co.,Ltd E0:D9:E3 Eltex Enterprise Ltd. E8:28:C1 Eltex
+Enterprise Ltd.
 
 Обнаружить устройства, которые НЕ рандомизируют свой MAC адрес
 
